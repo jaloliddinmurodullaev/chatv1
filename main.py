@@ -54,7 +54,9 @@ def register():
         # Make sure no ther user with similar credentials is already registered
         try:
             user = client.query(q.get(q.match(q.index('user_index'), email)))
-            flash("User already exists with that username.")
+            flash("User already exists with that email.")
+            user = client.query(q.get(q.match(q.index('username_users_index'), username)))
+            flash("User already exists with that email.")
             return redirect(url_for("login"))
         except:
             user = client.query(
@@ -93,14 +95,11 @@ def login():
         # To add email validator here
         email = request.form["email"].strip().lower()
         password = request.form["password"]
-        print(email, password)
-        print(hashlib.sha512(password.encode()).hexdigest())
         context = ""
 
         try:
             # Query the data base for the inputted email address
             user = client.query(q.get(q.match(q.index("user_index"), email)))
-            print(user)
             context += hashlib.sha512(password.encode()).hexdigest()
             context += " -- "
             context += user["data"]["password"]
@@ -136,7 +135,6 @@ def new_chat():
         # If user tries to add a chat that has not registerd, do nothing
 
         new_chat_id = client.query(q.get(q.match(q.index("user_index"), new_chat)))
-        print(new_chat_id)
     except:
         return redirect(url_for("chat"))
     # Get the chats related to both user
@@ -196,7 +194,6 @@ def new_chat():
 def chat():
     # Get the room id in the url or set to None
     room_id = request.args.get("rid", None)
-    print(room_id)
     # Initialize context that contains information about the chat room
     data = []
     try:
@@ -257,7 +254,6 @@ def ftime(date):
 # Join-chat event. Emit online message to ther users and join the room
 @socketio.on("join-chat")
 def join_private_chat(data):
-    print(1001)
     room = data["rid"]
     join_room(room=room)
     socketio.emit(
@@ -271,7 +267,6 @@ def join_private_chat(data):
 # Outgoing event handler
 @socketio.on("outgoing")
 def chatting_event(json, methods=["GET", "POST"]):
-    print("OUTGOING")
     room_id = json["rid"]
     timestamp = json["timestamp"]
     message = json["message"]
